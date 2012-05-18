@@ -41,6 +41,9 @@ factRAM = do
         sdesc [_, size, unit] = storagedesc (size, unit)
     return [("memorysize", memtotal), ("memoryfree", memfree), ("swapfree", swapfree), ("swapsize", swaptotal)]
 
+factNET = do
+    return [("ipaddress", "192.168.0.1")]
+
 factOS :: IO [(String, String)]
 factOS = do
     lsb <- readFile "/etc/lsb-release" >>= return . map (break (== '=')) . lines
@@ -71,4 +74,4 @@ factOS = do
 version = return [("facterversion", "0.1")]
 
 allFacts :: IO [(String, String)]
-allFacts = mapM id [factRAM, factOS, version] >>= return . concat
+allFacts = mapM id [factNET, factRAM, factOS, version] >>= return . concat
