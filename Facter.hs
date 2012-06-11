@@ -3,6 +3,7 @@ module Facter where
 import Data.Char
 import Data.List
 import Text.Printf
+import qualified Data.Set as Set
 
 storageunits = [ ("", 0), ("K", 1), ("M", 2), ("G", 3), ("T", 4) ]
 
@@ -71,7 +72,23 @@ factOS = do
             , ("lsbdistdescription"     , getval "DISTRIB_DESCRIPTION")
             ]
 
+factMountPoints :: IO [(String, String)]
+factMountPoints = do
+    mountinfo <- readFile "/proc/mounts" >>= return . map words . lines
+    let ignorefs = Set.fromList 
+                    ["NFS", "nfs", "nfs4", "nfsd", "afs", "binfmt_misc", "proc", "smbfs",
+                    "autofs", "iso9660", "ncpfs", "coda", "devpts", "ftpfs", "devfs",
+                    "mfs", "shfs", "sysfs", "cifs", "lustre_lite", "tmpfs", "usbfs", "udf",
+                    "fusectl", "fuse.snapshotfs", "rpc_pipefs", "configfs", "devtmpfs",
+                    "debugfs", "securityfs", "ecryptfs", "fuse.gvfs-fuse-daemon", "rootfs"
+                    ]
+        goodlines = filter (\x -> not $ Set.member (x !! 2) ignorefs) mountinfo
+        goodfs = map (\x -> x !! 1) goodlines
+    return [("mountpoints", intercalate " " goodfs)]
+
+
+
 version = return [("facterversion", "0.1")]
 
 allFacts :: IO [(String, String)]
-allFacts = mapM id [factNET, factRAM, factOS, version] >>= return . concat
+allFacts = mapM id [factNET, factRAM, factOS, version, factMountPoints] >>= return . concat
