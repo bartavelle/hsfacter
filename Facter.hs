@@ -88,7 +88,7 @@ factMountPoints = do
 
 
 
-version = return [("facterversion", "0.1")]
+version = return [("facterversion", "0.1"),("environment","test")]
 
 allFacts :: IO [(String, String)]
 allFacts = mapM id [factNET, factRAM, factOS, version, factMountPoints] >>= return . concat
