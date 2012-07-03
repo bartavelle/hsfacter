@@ -9,6 +9,7 @@ license:             GPL-3
 license-file:        LICENSE
 author:              Simon Marechal
 maintainer:          simon@banquise.net
+homepage:            http://lpuppet.banquise.net
 -- copyright:           
 category:            System
 build-type:          Simple
