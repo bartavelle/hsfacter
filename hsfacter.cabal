@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                hsfacter
-version:             0.1.0.2
+version:             0.1.0.3
 synopsis:            A small and ugly library that emulates the output of the puppet facter program.
 description:         This is a reimplementation of the facter module used by Puppet, as a library. It is supposed to be used in conjunction with the language-puppet library in order to compute catalogs.
 license:             GPL-3
