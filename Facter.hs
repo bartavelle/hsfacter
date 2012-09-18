@@ -4,6 +4,10 @@ import Data.Char
 import Data.List
 import Text.Printf
 import qualified Data.Set as Set
+import qualified Data.Map as Map
+import Puppet.Interpreter.Types
+import Puppet.Init
+import PuppetDB.Rest
 
 storageunits = [ ("", 0), ("K", 1), ("M", 2), ("G", 3), ("T", 4) ]
 
@@ -90,5 +94,24 @@ factMountPoints = do
 
 version = return [("facterversion", "0.1"),("environment","test")]
 
-allFacts :: IO [(String, String)]
-allFacts = mapM id [factNET, factRAM, factOS, version, factMountPoints] >>= return . concat
+allFacts :: String -> IO (Map.Map String ResolvedValue)
+allFacts nodename = puppetDBFacts nodename "http://localhost:8080"
+
+puppetDBFacts :: String -> String -> IO (Map.Map String ResolvedValue)
+puppetDBFacts nodename url = do
+        puppetDBFacts <- rawRequest url "facts" nodename
+        case puppetDBFacts of
+            Right (ResolvedHash xs) ->
+                let myhash = case (filter ((=="facts") . fst) xs) of
+                                 [(_, ResolvedHash pfacts)] -> Map.fromList $ concatMap (\(a,b) -> [(a,b), ("::" ++ a, b)]) pfacts
+                                 _ -> error $ "Bad facts format: " ++ show xs
+                in  return myhash
+            _ -> do
+                rawFacts <- mapM id [factNET, factRAM, factOS, version, factMountPoints] >>= return . concat
+                let ofacts = genFacts rawFacts
+                    (hostname, ddomainname) = break (== '.') nodename
+                    domainname = tail $ ddomainname
+                    nfacts = genFacts [("fqdn", nodename), ("hostname", hostname), ("domain", domainname), ("rootrsa", "xxx")]
+                    allfacts = Map.union nfacts ofacts
+                return allfacts
+
