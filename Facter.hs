@@ -8,6 +8,7 @@ import qualified Data.Map as Map
 import Puppet.Interpreter.Types
 import Puppet.Init
 import PuppetDB.Rest
+import System.Info
 
 storageunits = [ ("", 0), ("K", 1), ("M", 2), ("G", 3), ("T", 4) ]
 
@@ -53,6 +54,7 @@ factOS :: IO [(String, String)]
 factOS = do
     lsb <- readFile "/etc/lsb-release" >>= return . map (break (== '=')) . lines
     hostname <- readFile "/proc/sys/kernel/hostname" >>= return . head . lines
+    aarch <- arch
     let getval st | null filtered = "?"
                   | otherwise = rvalue
                   where filtered = filter (\(k,_) -> k == st) lsb
@@ -74,12 +76,14 @@ factOS = do
             , ("hostname"               , hostname)
             , ("lsbdistcodename"        , getval "DISTRIB_CODENAME")
             , ("lsbdistdescription"     , getval "DISTRIB_DESCRIPTION")
+            , ("hardwaremodel"          , aarch)
+            , ("architecture"           , aarch)]
             ]
 
 factMountPoints :: IO [(String, String)]
 factMountPoints = do
     mountinfo <- readFile "/proc/mounts" >>= return . map words . lines
-    let ignorefs = Set.fromList 
+    let ignorefs = Set.fromList
                     ["NFS", "nfs", "nfs4", "nfsd", "afs", "binfmt_misc", "proc", "smbfs",
                     "autofs", "iso9660", "ncpfs", "coda", "devpts", "ftpfs", "devfs",
                     "mfs", "shfs", "sysfs", "cifs", "lustre_lite", "tmpfs", "usbfs", "udf",
@@ -89,8 +93,6 @@ factMountPoints = do
         goodlines = filter (\x -> not $ Set.member (x !! 2) ignorefs) mountinfo
         goodfs = map (\x -> x !! 1) goodlines
     return [("mountpoints", intercalate " " goodfs)]
-
-
 
 version = return [("facterversion", "0.1"),("environment","test")]
 
@@ -107,7 +109,7 @@ puppetDBFacts nodename url = do
                                  _ -> error $ "Bad facts format: " ++ show xs
                 in  return myhash
             _ -> do
-                rawFacts <- mapM id [factNET, factRAM, factOS, version, factMountPoints] >>= return . concat
+                rawFacts <- mapM id [factNET, factRAM, factOS, version, factMountPoints, factOS] >>= return . concat
                 let ofacts = genFacts rawFacts
                     (hostname, ddomainname) = break (== '.') nodename
                     domainname = tail $ ddomainname
