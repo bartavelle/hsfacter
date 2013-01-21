@@ -54,7 +54,6 @@ factOS :: IO [(String, String)]
 factOS = do
     lsb <- readFile "/etc/lsb-release" >>= return . map (break (== '=')) . lines
     hostname <- readFile "/proc/sys/kernel/hostname" >>= return . head . lines
-    aarch <- arch
     let getval st | null filtered = "?"
                   | otherwise = rvalue
                   where filtered = filter (\(k,_) -> k == st) lsb
@@ -76,8 +75,8 @@ factOS = do
             , ("hostname"               , hostname)
             , ("lsbdistcodename"        , getval "DISTRIB_CODENAME")
             , ("lsbdistdescription"     , getval "DISTRIB_DESCRIPTION")
-            , ("hardwaremodel"          , aarch)
-            , ("architecture"           , aarch)]
+            , ("hardwaremodel"          , arch)
+            , ("architecture"           , arch)
             ]
 
 factMountPoints :: IO [(String, String)]
@@ -113,7 +112,7 @@ puppetDBFacts nodename url = do
                 let ofacts = genFacts rawFacts
                     (hostname, ddomainname) = break (== '.') nodename
                     domainname = tail $ ddomainname
-                    nfacts = genFacts [("fqdn", nodename), ("hostname", hostname), ("domain", domainname), ("rootrsa", "xxx")]
+                    nfacts = genFacts [("fqdn", nodename), ("hostname", hostname), ("domain", domainname), ("rootrsa", "xxx"), ("operatingsystem", "Ubuntu"), ("puppetversion", "language-puppet")]
                     allfacts = Map.union nfacts ofacts
                 return allfacts
 
