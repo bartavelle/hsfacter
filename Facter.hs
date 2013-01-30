@@ -111,7 +111,9 @@ puppetDBFacts nodename url = do
                 rawFacts <- mapM id [factNET, factRAM, factOS, version, factMountPoints, factOS] >>= return . concat
                 let ofacts = genFacts rawFacts
                     (hostname, ddomainname) = break (== '.') nodename
-                    domainname = tail $ ddomainname
+                    domainname = if null ddomainname
+                                     then []
+                                     else tail $ ddomainname
                     nfacts = genFacts [("fqdn", nodename), ("hostname", hostname), ("domain", domainname), ("rootrsa", "xxx"), ("operatingsystem", "Ubuntu"), ("puppetversion", "language-puppet")]
                     allfacts = Map.union nfacts ofacts
                 return allfacts
