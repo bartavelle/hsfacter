@@ -9,6 +9,9 @@ import Puppet.Interpreter.Types
 import Puppet.Init
 import PuppetDB.Rest
 import System.Info
+import qualified Data.Text as T
+import Control.Arrow (first,second)
+import Data.Monoid
 
 storageunits = [ ("", 0), ("K", 1), ("M", 2), ("G", 3), ("T", 4) ]
 
@@ -95,26 +98,26 @@ factMountPoints = do
 
 version = return [("facterversion", "0.1"),("environment","test")]
 
-allFacts :: String -> IO (Map.Map String ResolvedValue)
-allFacts nodename = puppetDBFacts nodename "http://localhost:8080"
+allFacts :: T.Text -> IO (Map.Map T.Text ResolvedValue)
+allFacts nodename = puppetDBFacts (T.unpack nodename) "http://localhost:8080"
 
-puppetDBFacts :: String -> String -> IO (Map.Map String ResolvedValue)
+puppetDBFacts :: String -> String -> IO (Map.Map T.Text ResolvedValue)
 puppetDBFacts nodename url = do
-        puppetDBFacts <- rawRequest url "facts" nodename
+        puppetDBFacts <- rawRequest (T.pack url) "facts" (T.pack nodename)
         case puppetDBFacts of
             Right (ResolvedHash xs) ->
                 let myhash = case (filter ((=="facts") . fst) xs) of
-                                 [(_, ResolvedHash pfacts)] -> Map.fromList $ concatMap (\(a,b) -> [(a,b), ("::" ++ a, b)]) pfacts
+                                 [(_, ResolvedHash pfacts)] -> Map.fromList $ concatMap (\(a,b) -> [(a,b), ("::" <> a, b)]) pfacts
                                  _ -> error $ "Bad facts format: " ++ show xs
                 in  return myhash
             _ -> do
                 rawFacts <- mapM id [factNET, factRAM, factOS, version, factMountPoints, factOS] >>= return . concat
-                let ofacts = genFacts rawFacts
+                let ofacts = genFacts $ map (second T.pack . first T.pack) rawFacts
                     (hostname, ddomainname) = break (== '.') nodename
                     domainname = if null ddomainname
                                      then []
                                      else tail $ ddomainname
-                    nfacts = genFacts [("fqdn", nodename), ("hostname", hostname), ("domain", domainname), ("rootrsa", "xxx"), ("operatingsystem", "Ubuntu"), ("puppetversion", "language-puppet")]
+                    nfacts = genFacts $ map (second T.pack) [("fqdn", nodename), ("hostname", hostname), ("domain", domainname), ("rootrsa", "xxx"), ("operatingsystem", "Ubuntu"), ("puppetversion", "language-puppet")]
                     allfacts = Map.union nfacts ofacts
                 return allfacts
 
