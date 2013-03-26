@@ -124,6 +124,7 @@ puppetDBFacts nodename url = do
                                                             , ("operatingsystem", "Ubuntu")
                                                             , ("puppetversion", "language-puppet")
                                                             , ("virtual", "xenu")
+                                                            , ("clientcert", nodename)
                                                             ]
                     allfacts = Map.union nfacts ofacts
                 return allfacts
