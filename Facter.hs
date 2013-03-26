@@ -117,7 +117,14 @@ puppetDBFacts nodename url = do
                     domainname = if null ddomainname
                                      then []
                                      else tail $ ddomainname
-                    nfacts = genFacts $ map (second T.pack) [("fqdn", nodename), ("hostname", hostname), ("domain", domainname), ("rootrsa", "xxx"), ("operatingsystem", "Ubuntu"), ("puppetversion", "language-puppet")]
+                    nfacts = genFacts $ map (second T.pack) [ ("fqdn", nodename)
+                                                            , ("hostname", hostname)
+                                                            , ("domain", domainname)
+                                                            , ("rootrsa", "xxx")
+                                                            , ("operatingsystem", "Ubuntu")
+                                                            , ("puppetversion", "language-puppet")
+                                                            , ("virtual", "xenu")
+                                                            ]
                     allfacts = Map.union nfacts ofacts
                 return allfacts
 
